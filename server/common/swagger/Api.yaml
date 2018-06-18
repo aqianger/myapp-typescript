@@ -18,15 +18,25 @@ definitions:
     type: object
     title: example
     required:
-      - name
+      - Title
     properties:
-      name:
+      Title:
         type: string
-        description: The example name
+        example: no_stress
+schemes:
+  - http
+  - https
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
 
 paths:
   /examples:
     get:
+      security:
+        - Bearer: []
       tags:
         - Examples
       description: Fetch all examples
@@ -34,24 +44,28 @@ paths:
         200:
           description: Returns all examples
     post:
+      security:
+        - Bearer: []
       tags:
         - Examples
-      description: Create a new example
+      description: Fetch all examples
       parameters:
-        - name: body
+        - name: example
           in: body
-          description: number of items to skip
+          description: an example
           required: true
-          schema: 
-            $ref: "#/definitions/ExampleBody"
+          schema:
+            $ref: '#/definitions/ExampleBody'
       responses:
         200:
-          description: Returns all examples
+          description: Returns newly created examples
 
   /examples/{id}:
     get:
       tags:
         - Examples
+      security:
+        - Bearer: []
       parameters:
         - name: id
           in: path
@@ -61,5 +75,37 @@ paths:
       responses:
         200:
           description: Return the example with the specified id
-        404:
-          description: Example not 
+    delete:
+      tags:
+        - Examples
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the entity to delete
+          type: integer
+      responses:
+        204:
+          description: Example with the specified id is deleted
+    patch:
+      tags:
+        - Examples
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the entity to retrieve
+          type: integer
+        - name: example
+          in: body
+          description: an example
+          required: true
+          schema:
+            $ref: '#/definitions/ExampleBody'
+      responses:
+        200:
+          description: Return the updated example with the specified id

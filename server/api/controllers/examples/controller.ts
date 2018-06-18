@@ -1,25 +1,64 @@
-import ExamplesService from '../../services/examples.service';
+import GraphService from '../../services/graph.service';
 import { Request, Response } from 'express';
+import * as request from 'superagent';
+import * as MicrosoftGraph from "@microsoft/microsoft-graph-types"
 
 export class Controller {
-  all(req: Request, res: Response): void {
-    ExamplesService.all().then(r => res.json(r));
+  readAll(req: Request, res: Response): void {
+    GraphService.readAll(req.rawHeaders[req.rawHeaders.indexOf('Authorization') + 1]).then((r: MicrosoftGraph.ListItem[]) => {
+      if (r) res.json(r);
+      else res.end();
+    }).catch((err) => {
+      res.statusMessage = err.message ? err.message : undefined;
+      res.statusCode = err.status ? err.status : undefined;
+      res.end();
+    });
   }
 
-  byId(req: Request, res: Response): void {
-    ExamplesService.byId(req.params.id).then(r => {
+  readById(req: Request, res: Response): void {
+    GraphService.read(req.params.id, req.rawHeaders[req.rawHeaders.indexOf('Authorization') + 1]).then((r: MicrosoftGraph.ListItem) => {
       if (r) res.json(r);
-      else res.status(404).end();
+      else res.end();
+    }).catch((err) => {
+      res.statusMessage = err.message ? err.message : undefined;
+      res.statusCode = err.status ? err.status : undefined;
+      res.end();
+    });
+  }
+
+  deleteById(req: Request, res: Response): void {
+    GraphService.delete(req.params.id, req.rawHeaders[req.rawHeaders.indexOf('Authorization') + 1]).then((r: request.Response) => {
+      res.statusMessage = r.text;
+      res.statusCode = r.status;
+      res.end();
+    }).catch((err) => {
+      res.statusMessage = err.message ? err.message : undefined;
+      res.statusCode = err.status ? err.status : undefined;
+      res.end();
+    });
+  }
+
+  updateById(req: Request, res: Response): void {
+    GraphService.update(req.params.id, req.body, req.rawHeaders[req.rawHeaders.indexOf('Authorization') + 1]).then((r: MicrosoftGraph.FieldValueSet) => {
+      if (r) res.json(r);
+      else res.end();
+    }).catch((err) => {
+      res.statusMessage = err.message ? err.message : undefined;
+      res.statusCode = err.status ? err.status : undefined;
+      res.end();
     });
   }
 
   create(req: Request, res: Response): void {
-    ExamplesService.create(req.body.name).then(r =>
-      res
-        .status(201)
-        .location(`/api/v1/examples/${r.id}`)
-        .json(r),
-    );
+    GraphService.create(req.body, req.rawHeaders[req.rawHeaders.indexOf('Authorization') + 1]).then((r: MicrosoftGraph.ListItem) => {
+      if (r) res.json(r);
+      else res.end();
+    }).catch((err) => {
+      res.statusMessage = err.message ? err.message : undefined;
+      res.statusCode = err.status ? err.status : undefined;
+      res.end();
+    });
   }
 }
+
 export default new Controller();

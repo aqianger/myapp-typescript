@@ -1,6 +1,8 @@
 import * as express from 'express';
 import controller from './controller'
 export default express.Router()
+    .get('/', controller.readAll)
     .post('/', controller.create)
-    .get('/', controller.all)
-    .get('/:id', controller.byId);
+    .get('/:id', controller.readById)
+    .delete('/:id', controller.deleteById)
+    .patch('/:id', controller.updateById);
