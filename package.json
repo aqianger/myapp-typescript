@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "start": "cd build && node main",
-    "prestart": "node build.js && backpack build",
     "compile": "node build.js && backpack build",
     "dev": "node build.js && backpack dev | pino -o 'short'",
     "debug": "node build.js && backpack dev --inspect-brk | pino -o 'short'",
