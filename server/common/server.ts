@@ -2,7 +2,8 @@ import * as express from 'express';
 import { Application } from 'express';
 import * as path from 'path';
 import * as bodyParser from 'body-parser';
-import * as http from 'http';
+import * as https from 'https';
+import * as  fs from 'fs';
 import * as os from 'os';
 import * as cookieParser from 'cookie-parser';
 import swaggerify from './swagger';
@@ -24,10 +25,16 @@ export default class ExpressServer {
     swaggerify(app, routes)
     return this;
   }
-
-  listen(port: number = parseInt(process.env.PORT)): Application {
+  private options:any = {
+    key: fs.readFileSync('../../Certified/private.pem'),
+    cert: fs.readFileSync('../../Certified/file.crt'),
+    requestCert: false,
+    rejectUnauthorized: false
+  };
+  
+  listen(port: number = 3000): Application {
     const welcome = port => () => l.info(`up and running in ${process.env.NODE_ENV || 'development'} @: ${os.hostname() } on port: ${port}}`);
-    http.createServer(app).listen(port, welcome(port));
+    https.createServer(this.options, app).listen(port, welcome(port));
     return app;
   }
 }

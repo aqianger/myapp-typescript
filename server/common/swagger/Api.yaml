@@ -24,8 +24,9 @@ definitions:
         type: string
         example: no_stress
 schemes:
-  - http
   - https
+  - http
+
 securityDefinitions:
   Bearer:
     type: apiKey

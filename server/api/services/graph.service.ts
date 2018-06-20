@@ -1,8 +1,8 @@
 import * as MicrosoftGraph from "@microsoft/microsoft-graph-types"
 import * as request from 'superagent';
 
-let siteId: string = 'esquel.sharepoint.com,3768d2ae-de61-45da-be4e-03fd8d96702a,bdbbd4aa-bc90-4a64-bc4f-6b32500e485f';
-let listId: string = '67ece3a3-d709-42c9-be51-a6e8309e78c1';
+let siteId: string = 'esquel.sharepoint.com,ee8d7296-a555-4f00-a456-02ad6c32f750,34a11c71-bfb9-4871-8f5d-61c171e91658';
+let listId: string = 'a7a1e798-a13e-4cf7-9770-31e08ed8ebdc';
 
 export class GraphService {
 
@@ -10,13 +10,14 @@ export class GraphService {
         return new Promise(
             (resolve, reject) => {
                 request
-                    .get(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?expand=fields`)
+                    .get(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?`)
                     .set('Authorization', `Bearer ${accessToken}`)
                     .end((err, res: request.Response) => {
                         if (err) {
                             console.error(err)
                             reject(err);
                         } else {
+                            console.log(res.body);
                             let listItems: MicrosoftGraph.ListItem[] = res.body.value;
                             resolve(listItems);
                         }
