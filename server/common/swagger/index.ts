@@ -3,7 +3,8 @@ import { Application } from 'express';
 import * as path from 'path';
 
 export default function (app: Application, routes: (app: Application) => void) {
-  middleware(path.join(__dirname, 'Api.yaml'), app, function(err, middleware) {
+  let doc="Api.yaml";//"travel-ticket-request-api.yaml";
+  middleware(path.join(__dirname, doc), app, function(err, middleware) {
 
     // Enable Express' case-sensitive and strict options
     // (so "/entities", "/Entities", and "/Entities/" are all different)
@@ -33,6 +34,9 @@ export default function (app: Application, routes: (app: Application) => void) {
 
     // Error handler to display the validation error as HTML
     app.use(function (err, req, res, next) {
+      if(typeof err.status==="undefined") {
+        err.status=500;
+      }
       res.status(err.status);
       res.send(
         '<h1>' + err.status + ' Error</h1>' +

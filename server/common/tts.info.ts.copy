@@ -1,0 +1,29 @@
+import { Ittsinfos } from "../Interface/Ittsinfos";
+
+export const ttsInfos:Ittsinfos= {sitename:"tts_sit",
+id: "esquel.sharepoint.com,e8789049-8a54-4723-98c5-56f23aad974f,f77e82b0-4777-4e34-9d1b-84351e82077c",
+url:"https://esquel.sharepoint.com/sites/ead/tts_sit",
+Ticket_Requests_Cost_Centers_Breakdown:{
+listtitle:"Ticket Requests - Cost Centers Breakdown",
+id:"c3009b0c-c9f2-4115-b47b-d365a4cae851",
+name:"Ticket_Requests_Cost_Centers_Breakdown",
+},
+Ticket_Requests:{listtitle:"Ticket Requests",
+id:"a9892dda-fac2-435d-8bd4-0ce87f1ae63e",
+name:"Ticket_Requests"},
+System_Parameters:{listtitle:"System Parameters",id:"8748d325-ce10-4859-81dc-6c0e019915ae",
+name:"System_Parameters"},
+User_Default_Ticket_Pickup_Location:{listtitle:"User Default Ticket Pickup Location",id:"8b77290f-7db2-46c7-94b9-56a2c753c726",
+name:"User_Default_Ticket_Pickup_Location"},
+ID_Information:{listtitle:"ID Information",id:"afc24880-4cbe-4ed2-bd8c-11bc8246bdcf",
+name:"ID_Information"},
+Cost_Centers_Breakdown_Summary:{listtitle:"Ticket Requests - Cost Centers Breakdown Summary",id:"ed14ccc9-55a3-4b6d-a570-e431607a1c93",
+"name":"Cost_Centers_Breakdown_Summary"},
+User_Default_Cost_Center:{listtitle:"User Default Cost Center",id:"958df43b-506a-471a-9f13-d1c04aad2fd0",
+name:"User_Default_Cost_Center"},
+User_Coupon_Count:{listtitle:"User Coupon Count",id:"ccd5f2a5-2d73-44eb-8ec4-2ba110a0fa0b",
+name:"User_Coupon_Count"},
+Cost_Centers:{listtitle:"Cost Centers",
+id:"f103185b-01fb-4f5f-acb6-5fa4ae51cfe4",
+name:"Cost_Centers"}
+};

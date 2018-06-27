@@ -1,7 +1,7 @@
 import GraphService from '../../services/graph.service';
 import { Request, Response } from 'express';
 import * as request from 'superagent';
-import * as MicrosoftGraph from "@microsoft/microsoft-graph-types"
+import * as MicrosoftGraph from "@microsoft/microsoft-graph-types";
 
 export class Controller {
   readAll(req: Request, res: Response): void {

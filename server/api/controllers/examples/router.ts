@@ -5,4 +5,5 @@ export default express.Router()
     .post('/', controller.create)
     .get('/:id', controller.readById)
     .delete('/:id', controller.deleteById)
-    .patch('/:id', controller.updateById);
+    .patch('/:id', controller.updateById)
+    ;

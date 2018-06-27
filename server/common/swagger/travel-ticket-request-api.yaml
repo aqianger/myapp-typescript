@@ -1,0 +1,415 @@
+openapi: 3.0.0
+servers:
+  - url: /api/v1
+info:
+  version: 1.0.0
+  title: Travel Planner
+  description: My cool app
+basePath: /api/v1
+tags:
+  - name: Schedule
+  - name: Travel Ticketing System Request
+  - name: Cost Center
+  - name: Entity
+  - name: Traveller
+  - name: Specification
+    description: The swagger API specification
+
+paths:
+  '/travellers/{email}':
+    get:
+      tags:
+        - Traveller
+      description: Get traveller info by traveller office email address
+      parameters:
+        - name: email
+          in: path
+          description: the email of the travel that we want to obtain
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Traveller info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Traveller'
+
+  '/entities':
+    get:
+      tags:
+        - Entity
+      description: Get all entities
+      responses:
+        '200':
+          description: A list of entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example: ['EEL', 'GET', 'GLE']
+
+  '/cost_centers/{entity}':
+    get:
+      tags:
+        - Cost Center
+      description: Get all cost centers of an entity
+      parameters:
+        - name: entity
+          in: path
+          description: the entity of the cost centers to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns a list of cost centers of the given entity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CostCenter'
+                  
+  '/locations':
+    get:
+      tags:
+        - Locations
+      description: Get all frequently used locations in travel ticketing system, such as seaports, bus stations and train stations.
+      responses:
+        '200':
+          description: Returns a list of frequently used locations.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Location'
+
+  '/schedule/:modeid/:destinationid/:originid':
+    get:
+      tags:
+        - Schedule
+      description: 'Get ferry schedule between two location.'
+      parameters:
+        - name: modeid
+          description: the modeid of transport
+          in: query
+          required: true
+          schema:
+            type: int
+            enum:
+              - bus   /id
+              - ferry /id
+              - china railway /id
+              - mtr intercity through train /id
+            example: ferry
+        - name: destinationid
+          in: query
+          required: true
+          description: the id of the destination. The name should be in 
+          schema:
+            type: int
+        - name: originid
+          in: query
+          required: true
+          description: the id of the origin, such as `shunde port --id`
+          schema:
+            type: int
+      responses:
+        '200':
+          description: Returns schedule of given transportation between two locations.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schedule'
+        '400':
+          description: 'Returns error if no schedule is found'
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Schedule between two ports is not available'
+                
+  '/travel_ticket_requests':
+    post:
+      tags:
+        - Travel Ticketing System Request
+      description: Create a new ferry ticket request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TravelTicketRequest'
+        required: true
+      responses:
+        '200':
+          description: Returns request
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: string
+                        example: TTS20180604001
+                  - $ref: '#/components/schemas/TravelTicketRequest'
+        
+  '/travel_ticket_requests/{id}':
+    get:
+      tags:
+        - Travel Ticketing System Request
+      description: Get request with given ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the request to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Return the request with the specified id
+        '404':
+          description: Example not found
+    put:
+      tags:
+        - Travel Ticketing System Request
+      description: Update request with given ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the request to update
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TravelTicketRequest'
+        description: request body
+        required: true
+      responses:
+        '200':
+          description: Returns request
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: string
+                        example: TTS20180604001
+                  - $ref: '#/components/schemas/TravelTicketRequest'
+    delete:
+      tags:
+        - Travel Ticketing System Request
+      description: Delete request with given ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the request to be deleted
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Request deleted
+
+  '/spec':
+    get:
+      tags:
+        - Specification
+      responses:
+        '200':
+          description: Return the API specification
+
+components:
+  schemas:
+    
+    Entity:
+      type: object
+      required:
+        - entity
+      properties:
+        entity:
+          type: string
+          example: 'EEL'
+          
+    CostCenter:
+      allOf:     # Combines the BasicErrorModel and the inline model
+        - $ref: '#/components/schemas/Entity'
+        - type: object
+          required:
+          - department
+          - code
+          properties:
+            department:
+              type: string
+              example: 'information technology'
+            code:
+              type: string
+              example: '851.3011'
+  
+    Time:
+      type: object
+      title: Time
+      required:
+        - Hour
+        - Minute
+      properties:
+        Hour:
+          type: string
+          example: '08'
+        Minute:
+          type: string
+          example: '30'
+          
+    Schedule:
+      type: object
+      title: Ferry Schedule
+      required:
+        - departureTime
+        - departurePort
+        - arrivalPort
+      properties:
+        departureTime:
+          type: array
+          items:
+            $ref: '#/components/schemas/Time'
+        destination:
+          $ref: '#/components/schemas/Location'
+        origin:
+          $ref: '#/components/schemas/Location'
+        mode:
+          type: string
+          enum:
+            - bus
+            - ferry
+            - china railway
+            - mtr intercity through train
+          example: 'ferry'
+          
+    TravelTicketRequest:
+      type: object
+      title: Ferry Ticket Request
+      required:
+        - departureDate
+        - departurePort
+        - arrivalPort
+        - seatClass
+        - travllers
+        - mode
+      properties:
+        mode:
+          type: string
+          example: 'ferry'
+          enum: ['ferry', 'high-speed rail', 'bus', 'intercity through train']
+        departureDate:
+          type: string
+          example: '04 Jun 2018 08:30 UTC+8'
+          description: A date string that is accepted by `Date.parse()`
+        departurePort:
+          type: string
+          example: 'Hong Kong China Ferry Terminal'
+        arrivalPort:
+          type: string
+          example: 'Shunde Port'
+        seatClass:
+          type: string
+          enum:
+            - 'VIP'
+            - 'First Class'
+            - 'Economy Class'
+          example: 'Economy Class'
+        travllers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Traveller'
+        remarks:
+          type: string
+          example: Window seats please
+        pickUpLocation:
+          type: string
+          enum:
+            - 'ECP 25/F'
+            - 'HC 13/F'
+          example: 'ECP 25/F'
+          
+    Location:
+      type: object
+      title: Location
+      properties:
+        english_name:
+          type: string
+          example: 'Shunde Port'
+        chinese_name:
+          type: string
+          example: '順德港'
+        lat:
+          type: number
+          example: 22.8054
+        lng:
+          type: number
+          example: 113.3404
+        mode:
+          type: string
+          enum: ['bus', 'ferry', 'china railway', 'mtr intercity through train']
+          example: 'ferry'
+          
+    Traveller:
+      type: object
+      title: Traveller
+      required:
+        - id
+        - name
+        - costCenter
+        - documentType
+        - documentID
+        - isDocumentIDMasked
+      properties:
+        id:
+          type: string
+          description: The id of internal traveller is his email; The id of external guest will be the hash of his travel document
+          example: 'tseki@esquel.com'
+        email:
+          type: string
+          example: tseki@esquel.com
+        name:
+          type: string
+          example: 謝杰鑫
+          description: >-
+            The real name of traveller in Chinese. English may be used if and only if the traveller has no Chinese name.
+        costCenter:
+          type: string
+          example: '851.3011'
+        # documentType:
+        #   type: string
+        #   enum:
+        #     - 'Home Return Permit'
+        #     - 'Passport'
+        #     - 'Resident Identity Card'
+        #   example: 'Home Return Permit'
+        # documentID:
+        #   type: string
+        #   example: '*****5678'
+        isGuest:
+          type: boolean
+          example: false
+        # isDocumentIDMasked:
+        #   type: boolean
+        #   example: true
