@@ -28,6 +28,7 @@ export class TtsController {
     }
     entities(req: Request, res: Response): void {
         console.log(this);
+        /*
         TtsServices.get_ttsparent(getAccessToken(req), tts_parent.FactoryCode.name, "SubFactory")
             .then((r) => {
                 if (r) {
@@ -39,7 +40,22 @@ export class TtsController {
                 res.statusMessage = err.message ? err.message : undefined;
                 res.statusCode = err.status ? err.status : undefined;
                 res.end();
+            });*/
+            TtsServices.readbyFilter(getAccessToken(req),tts_parent.Factory.name,
+            "","","Id,Title",undefined,true)
+            .then((body) => {
+                let r:any[]=body.d.results;
+                if (r) {
+                   // r = Array.from(new Set(r));
+                    res.json(r);
+                } else { res.end(); }
+            })
+            .catch((err) => {
+                res.statusMessage = err.message ? err.message : undefined;
+                res.statusCode = err.status ? err.status : undefined;
+                res.end();
             });
+
     }
     cost_centers(req: Request, res: Response): void {
         TtsServices.get_ttsparent(getAccessToken(req), tts_parent.FactoryCode.name, "", req.params.entity)

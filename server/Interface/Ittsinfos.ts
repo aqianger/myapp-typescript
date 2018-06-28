@@ -24,4 +24,5 @@ export interface Ittsinfos extends  Isiteinfo {
 }
 export interface Ittsparentinfo extends Isiteinfo {
     FactoryCode:IListinfo;
+    Factory:IListinfo;
 }

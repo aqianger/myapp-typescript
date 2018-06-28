@@ -4,6 +4,7 @@ import * as MicrosoftGraph from "@microsoft/microsoft-graph-types";
 import { tts_parent } from "../../common/tts_parent";
  import  SpRequestService from "./sprequestservice";
 import * as suprequest from "superagent";
+import { Ittsparentinfo, Ittsinfos } from "../../Interface/Ittsinfos";
 export class TtsServices {
     getUserData(accessToken: string): Promise<MicrosoftGraph.ListItem> {
         return new Promise(
@@ -24,7 +25,8 @@ export class TtsServices {
                 });
             });
     }
-    readbyFilter(accessToken: string, listKey: string, filterstring: string, topvalue?: number): Promise<any[]> {
+    readbyFilter(accessToken: string, listKey: string, filterstring: string,expand?:string,
+        select?:string, topvalue?: number,fromParentSite?:boolean): Promise<any> {
         return new Promise((resolve, reject) => {
             suprequest.get("https://graph.microsoft.com/v1.0/me")
                 .set("Authorization", "Bearer " + accessToken)
@@ -34,14 +36,18 @@ export class TtsServices {
                         console.error(err);
                         reject(err);
                     } else {
-                     SpRequestService.request_get(`${ttsInfos.url}/_api/web/lists/GetByTitle(\'${ttsInfos[listKey]
-                            .listtitle}\')/items?$filter=${filterstring}${topvalue > 0 ?
-                            "&$top=" + topvalue : ""}`)
+                        let siteInfo:Ittsparentinfo|Ittsinfos=fromParentSite?tts_parent:ttsInfos;
+                        let url:string=`${siteInfo.url}/_api/web/lists/GetByTitle(\'${siteInfo[listKey]
+                            .listtitle}\')/items?$filter=${filterstring}&$expand=${expand||""}&$select=${select||
+                            ""}${topvalue > 0 ?
+                            "&$top=" + topvalue : ""}`;
+                     SpRequestService.request_get(url)
                             .then(response => {
                                 console.log(response.body);
-                                resolve(response.body.value);
+                                resolve(response.body);
                             })
                             .catch(err2 => {
+                                console.log(url);
                                 reject(err2);
                             });
                     }
@@ -77,7 +83,7 @@ export class TtsServices {
         return new Promise(
             (resolve, reject) => {
                 suprequest
-                    .get(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listKey].id}/items?`)
+                    .get(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listKey].id}/items?$expand=Fields`)
                     .set("Authorization", `Bearer ${accessToken}`)
                     .set("Prefer","HonorNonIndexedQueriesWarningMayFailRandomly")
                     .end((err, res: suprequest.Response) => {
@@ -128,7 +134,7 @@ export class TtsServices {
         return new Promise(
             (resolve, reject) => {
                 suprequest
-                    .get(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listkey].id}/items/${id}`)
+                    .get(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listkey].id}/items/${id}?expand=Fields`)
                     .set("Authorization", `Bearer ${accessToken}`)
                     .set("Prefer","HonorNonIndexedQueriesWarningMayFailRandomly")
                     .end((err, res: suprequest.Response) => {

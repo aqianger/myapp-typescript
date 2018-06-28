@@ -9,5 +9,5 @@ import {
   export let onlineUrl: string = "https://esquel.sharepoint.com/sites/ead/tts_sit";
   export let onlineWithAdfsCreds: IUserCredentials = {
     username: "guoqian@esquel.com",
-    password: "*****"
+    password: "Gu.2018"
   };
