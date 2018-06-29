@@ -2,7 +2,7 @@ import { ttsInfos } from "../../common/tts.info";
 import * as MicrosoftGraph from "@microsoft/microsoft-graph-types";
 // import { resolve } from "dns";
 import { tts_parent } from "../../common/tts_parent";
- import  SpRequestService from "./sprequestservice";
+import SpRequestService from "./sprequestservice";
 import * as suprequest from "superagent";
 import { Ittsparentinfo, Ittsinfos } from "../../Interface/Ittsinfos";
 export class TtsServices {
@@ -11,22 +11,22 @@ export class TtsServices {
             (resolve, reject) => {
                 suprequest
                     .get("https://graph.microsoft.com/v1.0/me")
-                .set("Authorization", "Bearer " + accessToken)
-                .end((err, res: suprequest.Response) => {
-                    // callback(err, res);
-                    if (err) {
-                        console.error(err);
-                        reject(err);
-                    } else {
-                        console.log(res.body);
-                        let listItem: MicrosoftGraph.ListItem = res.body.value;
-                        resolve(listItem);
-                    }
-                });
+                    .set("Authorization", "Bearer " + accessToken)
+                    .end((err, res: suprequest.Response) => {
+                        // callback(err, res);
+                        if (err) {
+                            console.error(err);
+                            reject(err);
+                        } else {
+                            console.log(res.body);
+                            let listItem: MicrosoftGraph.ListItem = res.body.value;
+                            resolve(listItem);
+                        }
+                    });
             });
     }
-    readbyFilter(accessToken: string, listKey: string, filterstring: string,expand?:string,
-        select?:string, topvalue?: number,fromParentSite?:boolean): Promise<any> {
+    readbyFilter(accessToken: string, listKey: string, filterstring: string, expand?: string,
+        select?: string, topvalue?: number, fromParentSite?: boolean): Promise<any> {
         return new Promise((resolve, reject) => {
             suprequest.get("https://graph.microsoft.com/v1.0/me")
                 .set("Authorization", "Bearer " + accessToken)
@@ -36,12 +36,12 @@ export class TtsServices {
                         console.error(err);
                         reject(err);
                     } else {
-                        let siteInfo:Ittsparentinfo|Ittsinfos=fromParentSite?tts_parent:ttsInfos;
-                        let url:string=`${siteInfo.url}/_api/web/lists/GetByTitle(\'${siteInfo[listKey]
-                            .listtitle}\')/items?$filter=${filterstring}&$expand=${expand||""}&$select=${select||
+                        let siteInfo: Ittsparentinfo | Ittsinfos = fromParentSite ? tts_parent : ttsInfos;
+                        let url: string = `${siteInfo.url}/_api/web/lists/GetByTitle(\'${siteInfo[listKey]
+                            .listtitle}\')/items?$filter=${filterstring}&$expand=${expand || ""}&$select=${select ||
                             ""}${topvalue > 0 ?
-                            "&$top=" + topvalue : ""}`;
-                     SpRequestService.request_get(url)
+                                "&$top=" + topvalue : ""}`;
+                        SpRequestService.request_get(url)
                             .then(response => {
                                 console.log(response.body);
                                 resolve(response.body);
@@ -65,8 +65,8 @@ export class TtsServices {
                         console.error(err);
                         reject(err);
                     } else {
-                
-                       SpRequestService.request_get(`${ttsInfos.url}/_api/web/siteuserinfolist/items?$filter=EMail eq '${email}'`)
+
+                        SpRequestService.request_get(`${ttsInfos.url}/_api/web/siteuserinfolist/items?$filter=EMail eq '${email}'`)
                             .then(response => {
                                 console.log(response.body);
                                 resolve(response.body.value);
@@ -74,7 +74,7 @@ export class TtsServices {
                             .catch(err2 => {
                                 reject(err2);
                             });
-                           
+
                     }
                 });
         });
@@ -85,7 +85,7 @@ export class TtsServices {
                 suprequest
                     .get(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listKey].id}/items?$expand=Fields`)
                     .set("Authorization", `Bearer ${accessToken}`)
-                    .set("Prefer","HonorNonIndexedQueriesWarningMayFailRandomly")
+                    .set("Prefer", "HonorNonIndexedQueriesWarningMayFailRandomly")
                     .end((err, res: suprequest.Response) => {
                         if (err) {
                             console.error(err);
@@ -114,7 +114,7 @@ export class TtsServices {
                 }
                 suprequest
                     .get(`https://graph.microsoft.com/v1.0/sites/${tts_parent
-                    .id}/lists/${tts_parent[listKey].id}/items?$expand=Fields${select}${filter}`)
+                        .id}/lists/${tts_parent[listKey].id}/items?$expand=Fields${select}${filter}`)
                     .set("Authorization", `Bearer ${accessToken}`)
                     .end((err, res: suprequest.Response) => {
                         if (err) {
@@ -136,7 +136,7 @@ export class TtsServices {
                 suprequest
                     .get(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listkey].id}/items/${id}?expand=Fields`)
                     .set("Authorization", `Bearer ${accessToken}`)
-                    .set("Prefer","HonorNonIndexedQueriesWarningMayFailRandomly")
+                    .set("Prefer", "HonorNonIndexedQueriesWarningMayFailRandomly")
                     .end((err, res: suprequest.Response) => {
                         if (err) {
                             console.error(err);
@@ -168,13 +168,38 @@ export class TtsServices {
         );
     }
 
+    spcreate(body: any, accessToken: string, listKey: string): Promise<MicrosoftGraph.ListItem> {
+        return new Promise((resolve, reject) => {
+            suprequest.get("https://graph.microsoft.com/v1.0/me")
+                .set("Authorization", "Bearer " + accessToken)
+                .end((err, res: suprequest.Response) => {
+                    // callback(err, res);
+                    if (err) {
+                        console.error(err);
+                        reject(err);
+                    } else {
+                        SpRequestService.request_create(
+                            body, ttsInfos[listKey].listtitle,ttsInfos.url,
+                            `${ttsInfos.url}/_api/web/lists/GetByTitle('${ttsInfos[listKey].listtitle}')/items`
+                        ).then(response => {
+                            console.log(response.body);
+                            resolve(response.body.value);
+                        }).catch(err2 => {
+                           console.log(err2);
+                            reject(err2);
+                        });
+                    }
+                }
+                );
+        });
+    }
     create(body: object, accessToken: string, listKey: string): Promise<MicrosoftGraph.ListItem> {
         return new Promise(
             (resolve, reject) => {
                 suprequest
                     .post(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listKey].id}/items`)
                     .set("Authorization", `Bearer ${accessToken}`)
-                    .send(body)
+                    .send({"fields":body})
                     .end((err, res: suprequest.Response) => {
                         if (err) {
                             console.error(err);
@@ -187,6 +212,8 @@ export class TtsServices {
             }
         );
     }
+
+
     update(id: string, body: object, accessToken: string, listKey: string): Promise<MicrosoftGraph.FieldValueSet> {
         return new Promise(
             (resolve, reject) => {

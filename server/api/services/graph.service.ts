@@ -26,7 +26,7 @@ export class GraphService {
             (resolve, reject) => {
                 request
                     .get(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?`)
-                    .set('Authorization', `Bearer ${accessToken}`)
+                    .set("Authorization", `Bearer ${accessToken}`)
                     .end((err, res: request.Response) => {
                         if (err) {
                             console.error(err)

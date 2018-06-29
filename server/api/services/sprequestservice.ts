@@ -1,6 +1,7 @@
 import * as sprequest from "sp-request";
+import { ISPRequest } from "sp-request";
 let config: any = require("../../common/CredentialConfig");
-let spr: any = sprequest.create(config.onlineWithAdfsCreds);
+let spr: ISPRequest = sprequest.create(config.onlineWithAdfsCreds);
 export class SpRequestService {
    request_get(url:string):Promise<any> {
     return new Promise((resolve, reject) => {
@@ -13,5 +14,62 @@ export class SpRequestService {
 });
 });
 }
+request_create(bodydata: any, listtitle:string,siteurl:string,apiurl:string):Promise<any> {
+    return new Promise((resolve, reject) => {
+        spr.requestDigest(siteurl).then((value)=> {
+            listtitle=listtitle.replace(/ /g,"_x0020_");
+           bodydata.__metadata= { type: `SP.Data.${listtitle}ListItem` };
+           console.log(bodydata);
+        spr.post(apiurl,{
+            body:bodydata,
+            headers: {
+              "X-RequestDigest": value,
+            }
+          }).then(response => {
+            resolve(response);
+          }).catch(err2 => {
+            reject(err2);
+        });});
+});
 }
+
+request_update(bodydata: any, listtitle:string, url:string):Promise<any> {
+    return new Promise((resolve, reject) => {
+        spr.requestDigest(url).then((value)=> {
+           bodydata.__metadata= { type: `SP.Data.${listtitle}ListItem` };
+        spr.post(url,{
+            body:bodydata,
+            headers: {
+              "X-RequestDigest": value,
+    "IF-MATCH": "*",
+    "X-HTTP-Method":"MERGE",
+            }
+          }).then(response => {
+            resolve(response);
+          }, err => {
+            reject(err);
+          });});
+});
+}
+request_delete(bodydata: any, listtitle:string, url:string):Promise<any> {
+    return new Promise((resolve, reject) => {
+        spr.requestDigest(url).then((value)=> {
+           bodydata.__metadata= { type: `SP.Data.${listtitle}ListItem` };
+        spr.post(url,{
+            body:bodydata,
+            headers: {
+              "X-RequestDigest": value,
+    "IF-MATCH": "*",
+    "X-HTTP-Method":"DELETE",
+            }
+          }).then(response => {
+            resolve(response);
+          }, err => {
+            reject(err);
+          });});
+});
+}
+}
+
+
 export default new SpRequestService();

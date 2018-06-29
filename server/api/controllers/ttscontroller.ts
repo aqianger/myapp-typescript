@@ -104,7 +104,20 @@ export class TtsController {
             });
     }
     create_ticket_requests(req: Request, res: Response): void {
-        TtsServices.create(req.body, getAccessToken(req), ttsInfos.Ticket_Requests.name)
+TtsServices.create(req.body, getAccessToken(req), ttsInfos.Ticket_Requests.name)
+.then((r) => {
+    if (r) {
+        res.json(r);
+    } else {
+        res.end();
+    }
+}).catch((err) => {
+    res.statusMessage = err.message ? err.message : undefined;
+    res.statusCode = err.status ? err.status : undefined;
+    res.end();
+});
+        /*
+        TtsServices.spcreate(req.body, getAccessToken(req), ttsInfos.Ticket_Requests.name)
             .then((r) => {
                 if (r) {
                     res.json(r);
@@ -116,6 +129,7 @@ export class TtsController {
                 res.statusCode = err.status ? err.status : undefined;
                 res.end();
             });
+            */
     }
 
     read_ticket_requests(req: Request, res: Response): void {
