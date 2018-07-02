@@ -36,5 +36,15 @@ Routes:{
     listtitle:"Routes",
     id:"bc9132a9-d087-4f4d-bbfe-08a448175136",
     name:"Routes"
+},
+Transportation_Modes:{
+    listtitle:"Transportation Modes",
+    id:"5b36af74-3075-4809-a0b3-9c7e59c27eed",
+    name:"Transportation_Modes"
+},
+Ticket_Pickup_Locations:{
+    listtitle:"Ticket Pickup Locations",
+    id:"69822ab8-f278-492a-b8fa-6b6381d95aaa",
+    name:"Ticket_Pickup_Locations",
 }
 };

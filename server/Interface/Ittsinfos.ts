@@ -21,6 +21,8 @@ export interface Ittsinfos extends  Isiteinfo {
     Cost_Centers:IListinfo;
     Locations:IListinfo;
     Routes:IListinfo;
+    Transportation_Modes:IListinfo;
+    Ticket_Pickup_Locations:IListinfo;
 }
 export interface Ittsparentinfo extends Isiteinfo {
     FactoryCode:IListinfo;
