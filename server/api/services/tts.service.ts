@@ -6,7 +6,7 @@ import SpRequestService from "./sprequestservice";
 import * as suprequest from "superagent";
 import { Ittsparentinfo, Ittsinfos } from "../../Interface/Ittsinfos";
 export class TtsServices {
-    getUserData(accessToken: string): Promise<MicrosoftGraph.ListItem> {
+    getUserData(accessToken: string): Promise<any> {
         return new Promise(
             (resolve, reject) => {
                 suprequest
@@ -19,13 +19,35 @@ export class TtsServices {
                             reject(err);
                         } else {
                             console.log(res.body);
-                            let listItem: MicrosoftGraph.ListItem = res.body.value;
-                            resolve(listItem);
+                            //  let listItem: MicrosoftGraph.ListItem = res.body;
+                            return this.getUserDatabyEmail(res.body.mail).then((data) => {
+                                resolve(data);
+                            }).catch((err) => { reject(err); });
                         }
                     });
             });
     }
-    readbyFilter(accessToken: string, listKey: string, filterstring: string, expand?: string,
+    getUserDatabyEmail(email: string): Promise<any> {
+        let url: string = `${ttsInfos.url}/_api/web/SiteUserInfoList/items?$filter=EMail eq '${email}'`;
+        return new Promise(
+            (resolve, reject) => {
+                SpRequestService.request_get(url)
+                    .then(response => {
+                        console.log(response.body);
+                        if (response.body.d.results.length > 0) {
+                            resolve(response.body.d.results[0]);
+                        } else {
+                            resolve(response.body.d);
+                        }
+                    })
+                    .catch(err2 => {
+                        console.log(url);
+                        reject(err2);
+                    });
+            });
+
+    }
+    async readbyFilter(accessToken: string, listKey: string, filterstring: string, expand?: string,
         select?: string, topvalue?: number, fromParentSite?: boolean): Promise<any> {
         return new Promise((resolve, reject) => {
             suprequest.get("https://graph.microsoft.com/v1.0/me")
@@ -65,16 +87,11 @@ export class TtsServices {
                         console.error(err);
                         reject(err);
                     } else {
-
-                        SpRequestService.request_get(`${ttsInfos.url}/_api/web/siteuserinfolist/items?$filter=EMail eq '${email}'`)
-                            .then(response => {
-                                console.log(response.body);
-                                resolve(response.body.value);
-                            })
-                            .catch(err2 => {
-                                reject(err2);
-                            });
-
+                        return this.getUserDatabyEmail(email).then((data) => {
+                            resolve(data);
+                        }).catch(err => {
+                            reject(err);
+                        });
                     }
                 });
         });
@@ -179,13 +196,13 @@ export class TtsServices {
                         reject(err);
                     } else {
                         SpRequestService.request_create(
-                            body, ttsInfos[listKey].listtitle,ttsInfos.url,
+                            body, ttsInfos[listKey].listtitle, ttsInfos.url,
                             `${ttsInfos.url}/_api/web/lists/GetByTitle('${ttsInfos[listKey].listtitle}')/items`
                         ).then(response => {
                             console.log(response.body);
                             resolve(response.body.value);
                         }).catch(err2 => {
-                           console.log(err2);
+                            console.log(err2);
                             reject(err2);
                         });
                     }
@@ -199,7 +216,7 @@ export class TtsServices {
                 suprequest
                     .post(`https://graph.microsoft.com/v1.0/sites/${ttsInfos.id}/lists/${ttsInfos[listKey].id}/items`)
                     .set("Authorization", `Bearer ${accessToken}`)
-                    .send({"fields":body})
+                    .send({ "fields": body })
                     .end((err, res: suprequest.Response) => {
                         if (err) {
                             console.error(err);

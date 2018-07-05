@@ -6,7 +6,7 @@ export class SpRequestService {
    request_get(url:string):Promise<any> {
     return new Promise((resolve, reject) => {
         spr.get(url).then(response => {
-    console.log(response);
+  //  console.log(response);
     resolve(response);
 })
 .catch(err2 => {
