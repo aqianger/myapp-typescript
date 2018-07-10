@@ -48,7 +48,7 @@ export class TtsServices {
 
     }
     async readbyFilter(accessToken: string, listKey: string, filterstring: string, expand?: string,
-        select?: string, topvalue?: number, fromParentSite?: boolean): Promise<any> {
+        select?: string, topvalue?: number, fromParentSite?: boolean,orderby?:string,__next?:string): Promise<any> {
         return new Promise((resolve, reject) => {
             suprequest.get("https://graph.microsoft.com/v1.0/me")
                 .set("Authorization", "Bearer " + accessToken)
@@ -59,9 +59,9 @@ export class TtsServices {
                         reject(err);
                     } else {
                         let siteInfo: Ittsparentinfo | Ittsinfos = fromParentSite ? tts_parent : ttsInfos;
-                        let url: string = `${siteInfo.url}/_api/web/lists/GetByTitle(\'${siteInfo[listKey]
+                        let url: string =__next && __next.length>6?__next: `${siteInfo.url}/_api/web/lists/GetByTitle(\'${siteInfo[listKey]
                             .listtitle}\')/items?$filter=${filterstring}&$expand=${expand || ""}&$select=${select ||
-                            ""}${topvalue > 0 ?
+                            ""}&$oderby=${orderby||""}${topvalue > 0 ?
                                 "&$top=" + topvalue : ""}`;
                         SpRequestService.request_get(url)
                             .then(response => {

@@ -474,8 +474,29 @@ export class TtsController {
     }
 
 
-
-
+async my_ticket_requests(req: Request, res: Response): Promise<any> {
+    const accessToken:string=this.getAccessToken(req);
+    let userinfo: any = await this.getuser(accessToken);
+    const __next:string=req.params.__next||"";
+    const topstr:string=req.params.top||"";
+    let top:number=parseInt(topstr,10);
+    if(isNaN(parseInt(topstr,10))) {
+          top=10;
+    }
+    ttsService.readbyFilter(accessToken,ttsInfos.Ticket_Requests.name,
+    "AuthorId eq "+userinfo.Id,"","",top,false,"Id desc",__next)
+    .then((r) => {
+        if (r) {
+            res.json(r);
+        } else {
+            res.end();
+        }
+    }).catch((err) => {
+        res.statusMessage = err.message ? err.message : undefined;
+        res.statusCode = err.status ? err.status : undefined;
+        res.end();
+    });
+}
     getUserCouponCount(accessToken: string, userid: number): Promise<any> {
         return TtsServices.readbyFilter(accessToken, ttsInfos.User_Coupon_Count.name, "UserId eq " + userid);
     }
