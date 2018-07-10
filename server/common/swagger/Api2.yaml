@@ -1,0 +1,112 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: myapp-typescipt
+  description: My cool TypeScript app
+basePath: /api/v1
+tags:
+  - name: Examples
+    description: Simple example endpoints
+
+consumes:
+  - application/json
+produces:
+  - application/json
+
+definitions:
+  ExampleBody:
+    type: object
+    title: example
+    required:
+      - Title
+    properties:
+      Title:
+        type: string
+        example: no_stress
+schemes:
+  - https
+  - http
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+
+paths:
+  /examples:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Examples
+      description: Fetch all examples
+      responses:
+        200:
+          description: Returns all examples
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Examples
+      description: Fetch all examples
+      parameters:
+        - name: example
+          in: body
+          description: an example
+          required: true
+          schema:
+            $ref: '#/definitions/ExampleBody'
+      responses:
+        200:
+          description: Returns newly created examples
+
+  /examples/{id}:
+    get:
+      tags:
+        - Examples
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the entity to retrieve
+          type: integer
+      responses:
+        200:
+          description: Return the example with the specified id
+    delete:
+      tags:
+        - Examples
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the entity to delete
+          type: integer
+      responses:
+        204:
+          description: Example with the specified id is deleted
+    patch:
+      tags:
+        - Examples
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the entity to retrieve
+          type: integer
+        - name: example
+          in: body
+          description: an example
+          required: true
+          schema:
+            $ref: '#/definitions/ExampleBody'
+      responses:
+        200:
+          description: Return the updated example with the specified id

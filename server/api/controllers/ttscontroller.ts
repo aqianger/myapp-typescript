@@ -5,6 +5,9 @@ import { ttsInfos } from "../../common/tts.info";
 import { tts_parent } from "../../common/tts_parent";
 import ttsService from "../services/tts.service";
 import SpRequestService from "../services/sprequestservice";
+import { Iticketrequest } from "../../Interface/Iticketrequest";
+import { ITrcCentersBreakdownListItem } from "../../Interface/ITrcCentersBreakdownListItem";
+import sprequestservice from "../services/sprequestservice";
 // import { onlineWithAdfsCreds, onlineUrl } from "../../common/CredentialConfig";
 // import { IUserCredentials } from "sp-request";
 // let spr:any = sprequest.create( onlineWithAdfsCreds);
@@ -39,9 +42,9 @@ export class TtsController {
         return TtsServices.readbyFilter(accessToken, ttsInfos.System_Parameters.name,
             "Title eq '" + key + "'");
     }
-    getroute(routeid:string, accessToken: string):Promise<any> {
-    return TtsServices.readbyFilter(accessToken,ttsInfos.Routes.name,
-    "Id eq "+routeid);
+    getroute(routeid: number, accessToken: string): Promise<any> {
+        return TtsServices.readbyFilter(accessToken, ttsInfos.Routes.name,
+            "Id eq " + routeid);
     }
     travellers(req: Request, res: Response): void {
         TtsServices.getuserbyemail(this.getAccessToken(req),
@@ -111,7 +114,7 @@ export class TtsController {
         ttsService.getuserbyemail(accessToken, email)
             .then((data) => {
                 const url: string = `${ttsInfos.url}/_api/web/lists/GetByTitle(\'${ttsInfos
-                    [ttsInfos.User_Default_Ticket_Pickup_Location.name]
+                [ttsInfos.User_Default_Ticket_Pickup_Location.name]
                     .listtitle}\')/items?$filter=UserId eq ${data.Id}`;
                 SpRequestService.request_get(url)
                     .then((r) => {
@@ -191,7 +194,10 @@ export class TtsController {
                 res.end();
             });
     }
-    getSeatPrices(o_TickectRequest:any,route:any):any {
+    ticket_requests_cost_centers_breakdown(req: Request, res: Response): void {
+        this.commreadallhandler(req, res, ttsInfos.Ticket_Requests_Cost_Centers_Breakdown.name);
+    }
+    getSeatPrices(o_TickectRequest: any, route: any): any {
 
         switch (o_TickectRequest.Seat) {
 
@@ -209,32 +215,89 @@ export class TtsController {
     }
     async create_ticket_requests(req: Request, res: Response): Promise<any> {
         let accessToken: string = this.getAccessToken(req);
-        let reqbody: any = req.body;
-        const getparam: any = await this.getSystemParameter("Ticket Sequence Number", accessToken);
+        let reqbody: Iticketrequest = {} as Iticketrequest;// = req.body;
+
         // console.log(getparam.d.results[0].Value);
-        let routeObj:any =await this.getroute(reqbody.RouteLookupId,accessToken);
-        let userinfo:any=await this.getuser(accessToken);
-        if(routeObj.d.results.length>0) {
-            routeObj=routeObj.d.results[0];
+
+        //  - travllers
+        let costcenters: ITrcCentersBreakdownListItem[] = [];
+        let reqtrcbdItems: any[] = req.body.travllers;
+        let userinfo: any = await this.getuser(accessToken);
+        let modetext: string = req.body.ModeText;
+        reqbody.Transportation_x0020_ModeLookupId = req.body.mode;
+        reqbody.Travel_x0020_Date = req.body.departureDate;
+        reqbody.RouteFrom = req.body.departurePort;
+        reqbody.RouteTo = req.body.arrivalPort;
+        reqbody.Seat = req.body.seatClass;
+
+        reqbody.TravelTime = req.body.TravelTime;
+        reqbody.RouteLookupId = req.body.RouteLookupId;
+        reqbody.TIcket_x0020_Type = req.body.tickettype;
+        reqbody.Quantity = reqtrcbdItems.length;
+        reqbody.RequestorLookupId = userinfo.Id;
+        reqbody.Request_x0020_For=req.body.RequestFor;
+        reqbody.Ticket_x0020_Pickup_x0020_LocatiLookupId = req.body.LocationId;
+
+
+        reqbody.ChineseName=req.body.ChineseName||"";
+        // 'ChineseID': data.ChineseID, //Bill feedback 2016-5-20 point 3
+        reqbody.Remarks = req.body.Remarks;
+        reqbody.FerryRemarks = req.body.FerryRemarks;
+        let routeObj: any = await this.getroute(reqbody.RouteLookupId, accessToken);
+
+        if (routeObj.d.results.length > 0) {
+            routeObj = routeObj.d.results[0];
         } else {
-        routeObj= {};
-       }
+            routeObj = {};
+        }
         reqbody.Currency = routeObj.Currency;
-        reqbody.Unit_x0020_Cost = this.getSeatPrices(reqbody,routeObj);
-        reqbody.Requestor_x0020_Department=userinfo.Department;
+        reqbody.Unit_x0020_Cost = this.getSeatPrices(reqbody, routeObj);
+        reqbody.Requestor_x0020_Department = userinfo.Department;
+        let message: string = await this.checkdata(accessToken, reqbody, userinfo.Id);
+        if (message.length > 0) {
+            res.json({ code: -1, message: message });
+            return;
+        }
+        const pathparam: any = await this.getSystemParameter("Path", accessToken);
+        await SpRequestService.checkfile(pathparam.d.results[0].Value, true);
+        const getparam: any = await this.getSystemParameter("Ticket Sequence Number", accessToken);
         reqbody.Title = this.generateRequisitionNumber(getparam.d.results[0].Value);
+
         ttsService.update(getparam.d.results[0].Id, { Value: reqbody.Title }, accessToken,
             ttsInfos.System_Parameters.name).then((d) => {
                 console.log(d);
-            }).catch((err) => { console.log(err); });
+                SpRequestService.checkfile(pathparam.d.results[0].Value, false);
+            }).catch((err) => {
+                console.log(err);
+                SpRequestService.checkfile(pathparam.d.results[0].Value, false);
+                res.json(err);
+                return;
+            });
+
+        reqtrcbdItems.map((item, index) => {
+            let ctid: number = parseInt(item.costCenterid, 10);
+            if (ctid > 0) {
+                costcenters.push({
+                    Title: reqbody.Title,
+                    Cost_x0020_Center_x0020_CodeLookupId: ctid,
+                    Quantity: 1,
+                    Unit_x0020_Cost: reqbody.Unit_x0020_Cost,
+                    OfficeEmail: item.OfficeEmail,
+                    IsGuest: item.IsGuest,
+                    IDNumber: item.IDNumber,
+                    SeatClass: reqbody.Seat,
+                    IDType: item.IDType,
+                    FullName: item.FullName
+                });
+                let Seatstr: string = modetext === "Ferry" ? " " : " " + reqbody.Seat;
+                reqbody.EMailTemp = index === 0 ? item.FullName + Seatstr
+                    : reqbody.EMailTemp + "<br/>" + item.FullName + Seatstr;
+            }
+        });
         TtsServices.create(reqbody, accessToken, ttsInfos.Ticket_Requests.name)
             .then((r) => {
                 if (r) {
-                    /*
-                    let created:string=r.fields["Created"];
-                    created=created.split("T")[0]+"T00:00:00Z";
-                    TtsServices.readbyFilter(accessToken,ttsInfos.Ticket_Requests.name,
-                    `Created ge datetime'${created}'`,"")*/
+
                     const userid: string = r.fields["EditorLookupId"];
                     const url: string = `${ttsInfos.url}/_api/web/lists/GetByTitle(\'${ttsInfos
                     [ttsInfos.User_Default_Ticket_Pickup_Location.name]
@@ -259,11 +322,37 @@ export class TtsController {
                                 });
                         }
                     });
-
-                   
-
-
-
+                    console.log(costcenters);
+                    let CostCentersBreakdownSummary: any = {};
+                    costcenters.map((item) => {
+                        TtsServices.create(item, accessToken, ttsInfos.Ticket_Requests_Cost_Centers_Breakdown.name).then((ret) => {
+                            console.log(ret);
+                        });
+                        this.updateIDInformation(accessToken, item);
+                        if (modetext === "Ferry") {
+                            const ccbsKey: string = "" + item.Cost_x0020_Center_x0020_CodeLookupId;
+                            if (CostCentersBreakdownSummary[ccbsKey] == null) {
+                                CostCentersBreakdownSummary[ccbsKey] = {};
+                                CostCentersBreakdownSummary[ccbsKey]["UnitCost"] = item.Unit_x0020_Cost;
+                                CostCentersBreakdownSummary[ccbsKey].Quantity = 0;
+                                CostCentersBreakdownSummary[ccbsKey]["CostCenterCode"] = item.Cost_x0020_Center_x0020_CodeLookupId;
+                                CostCentersBreakdownSummary[ccbsKey]["RequisitionNumber"] = item.Title;
+                            }
+                            let peopleType: string = item.IsGuest === true ? "Guest" : "People";
+                            if (CostCentersBreakdownSummary[ccbsKey][peopleType] == null) {
+                                CostCentersBreakdownSummary[ccbsKey][peopleType] = "";
+                            }
+                            CostCentersBreakdownSummary[ccbsKey]["Quantity"]++;
+                            if (CostCentersBreakdownSummary[ccbsKey][peopleType] === "") {
+                                CostCentersBreakdownSummary[ccbsKey][peopleType] = item.FullName;
+                            } else {
+                                CostCentersBreakdownSummary[ccbsKey][peopleType] += "," + item.FullName;
+                            }
+                        }
+                    });
+                    if (modetext === "Ferry") {
+                        this.saveCostCentersBreakdownSummary(CostCentersBreakdownSummary, accessToken);
+                    }
                     res.json(r);
                 } else {
                     res.end();
@@ -287,6 +376,192 @@ export class TtsController {
                 res.end();
             });
             */
+    }
+
+  async  update_ticket_requests(req: Request, res: Response): Promise<any> {
+        let accessToken: string = this.getAccessToken(req);
+        let reqbody: Iticketrequest = {} as Iticketrequest;// = req.body;
+        reqbody.Id=req.params.Id;
+        const oldItems:any=await TtsServices.readbyFilter(accessToken,
+        ttsInfos.Ticket_Requests.name,"Id eq "+reqbody.Id);
+        if(oldItems.d.results.length===0) {
+           res.json({code:-1,message:"参数错误，或记录不存在"});
+            res.end();
+            return;
+        }
+        reqbody=Object.assign(oldItems.d.results[0],reqbody);
+        // console.log(getparam.d.results[0].Value);
+
+        //  - travllers
+        let costcenters: ITrcCentersBreakdownListItem[] = [];
+         let reqtrcbdItems: any[] = req.body.travllers;
+        let userinfo: any = await this.getuser(accessToken);
+        let modetext: string = req.body.ModeText;
+      reqbody.Request_x0020_For=req.body.RequestFor;
+        reqbody.Transportation_x0020_ModeLookupId = req.body.mode;
+        reqbody.Travel_x0020_Date = req.body.departureDate;
+        reqbody.RouteFrom = req.body.departurePort;
+        reqbody.RouteTo = req.body.arrivalPort;
+        reqbody.Seat = req.body.seatClass;
+
+        reqbody.TravelTime = req.body.TravelTime;
+        reqbody.RouteLookupId = req.body.RouteLookupId;
+        reqbody.TIcket_x0020_Type = req.body.tickettype;
+        reqbody.Quantity = reqtrcbdItems.length;
+        reqbody.RequestorLookupId = userinfo.Id;
+        reqbody.Ticket_x0020_Pickup_x0020_LocatiLookupId = req.body.LocationId;
+
+
+        reqbody.ChineseName=req.body.ChineseName||"";
+        // 'ChineseID': data.ChineseID, //Bill feedback 2016-5-20 point 3
+        reqbody.Remarks = req.body.Remarks;
+        reqbody.FerryRemarks = req.body.FerryRemarks;
+        let routeObj: any = await this.getroute(reqbody.RouteLookupId, accessToken);
+
+        if (routeObj.d.results.length > 0) {
+            routeObj = routeObj.d.results[0];
+        } else {
+            routeObj = {};
+        }
+        reqbody.Currency = routeObj.Currency;
+        reqbody.Unit_x0020_Cost = this.getSeatPrices(reqbody, routeObj);
+        reqbody.Requestor_x0020_Department = userinfo.Department;
+        let message: string = await this.checkdata(accessToken, reqbody, userinfo.Id);
+        if (message.length > 0) {
+            res.json({ code: -1, message: message });
+            return;
+        }
+        reqbody.EMailTemp="";
+        reqtrcbdItems.map((item, index) => {
+            let ctid: number = parseInt(item.costCenterid, 10);
+            if (ctid > 0) {
+                let Seatstr: string = modetext === "Ferry" ? " " : " " + reqbody.Seat;
+                reqbody.EMailTemp = index === 0 ? item.FullName + Seatstr
+                    : reqbody.EMailTemp + "<br/>" + item.FullName + Seatstr;
+            }
+        });
+       ttsService.update(reqbody.Id+"",{
+        "Transportation_x0020_ModeId": reqbody.Transportation_x0020_ModeLookupId,
+        "Travel_x0020_Date": reqbody.Travel_x0020_Date,
+        "TravelTime": reqbody.TravelTime,
+        "RouteLookupId": reqbody.RouteLookupId,
+        "TIcket_x0020_Type": reqbody.TIcket_x0020_Type,
+        "Seat": reqbody.Seat,
+        "Quantity": reqbody.Quantity,
+        "Currency": reqbody.Currency,
+        "Request_x0020_For": reqbody.Request_x0020_For,
+        "Ticket_x0020_Pickup_x0020_LocatiId":  reqbody.Ticket_x0020_Pickup_x0020_LocatiLookupId ,
+        "Unit_x0020_Cost": reqbody.Unit_x0020_Cost,
+        "AppEdit": "Y",
+        "RouteFrom": reqbody.RouteFrom,
+        "RouteTo": reqbody.RouteTo,
+        "ChineseName": reqbody.ChineseName,
+        "Remarks": reqbody.Remarks,
+        "FerryRemarks": reqbody.FerryRemarks ,
+        "EMailTemp": reqbody.EMailTemp
+       },accessToken,ttsInfos.Ticket_Requests.name).then((r) => {
+        if (r) {
+            res.json(r);
+        } else {
+            res.end();
+        }
+
+    }).catch((err) => {
+        res.statusMessage = err.message ? err.message : undefined;
+        res.statusCode = err.status ? err.status : undefined;
+        res.end();
+    });
+    }
+
+
+
+
+    getUserCouponCount(accessToken: string, userid: number): Promise<any> {
+        return TtsServices.readbyFilter(accessToken, ttsInfos.User_Coupon_Count.name, "UserId eq " + userid);
+    }
+    async  checkdata(accessToken: string, o_TickectRequest: any, userid: number): Promise<string> {
+        let Ucc: any = await this.getUserCouponCount(accessToken, userid);
+
+        if (Ucc.d.results && Ucc.d.results.length > 0) {
+            const getparam: any = await this.getSystemParameter("Maximum Number of Coupons", accessToken);
+            const MaximunValue: number = getparam.d.results[0].Value;
+            var userCouponTotal: number = Ucc.d.results[0].Count;
+            if (o_TickectRequest.Type === "Coupon" && o_TickectRequest.Quantity * 1 > MaximunValue) {
+                return "You cannot order more than " + MaximunValue + " per request.\n";
+            } else if (o_TickectRequest.Type === "Coupon" && userCouponTotal + (o_TickectRequest.Quantity * 1) > MaximunValue) {
+                // tslint:disable-next-line:max-line-length
+                return "Your are having outstanding coupon request which needs to be settled with Admin department before you can make new coupon request.\n";
+            } else if (o_TickectRequest.Type === "Ticket" && o_TickectRequest.Quantity * 1 > MaximunValue) {
+                return "You cannot order more than " + MaximunValue + " per request.\n";
+            }
+        }
+        return "";
+    }
+    updateIDInformation(accessToken: string, costcenterItem: any): void {
+        ttsService.readbyFilter(accessToken, ttsInfos.ID_Information.name, "OfficeEmail eq '" + costcenterItem.OfficeEmail + "'")
+            .then((itemdatas) => {
+                if (itemdatas.d.results.length === 0) {
+                    ttsService.create({
+                        "Title": costcenterItem.OfficeEmail,
+                        "IDType": costcenterItem.IDType,
+                        "OfficeEmail": costcenterItem.OfficeEmail,
+                        "FullName": costcenterItem.FullName,
+                        "IDNumber": costcenterItem.IDNumber,
+                        "IsSave": true
+                    }, accessToken, ttsInfos.ID_Information.name).then((idinfo) => {
+                        console.log("added ID Information", idinfo);
+                    });
+                } else if (itemdatas.d.results.length === 1) {
+                    ttsService.update(itemdatas.d.results[0].Id,
+                        {
+                            "IDType": costcenterItem.IDType,
+                            "IDNumber": (itemdatas.d.results[0].isSave === true ? costcenterItem.IDNumber : ""),
+                        }, accessToken, ttsInfos.ID_Information.name).then((iifm) => {
+                            console.log("update ID Information", iifm);
+                        });
+                }
+            });
+    }
+    saveCostCentersBreakdownSummary(datas: any[], accessToken: string): void {
+        for (var costCenterCodeId in datas) {
+            if (datas.hasOwnProperty(costCenterCodeId)) {
+                const data: any = datas[costCenterCodeId];
+                let url: string = `${ttsInfos.url}/_api/web/lists/GetByTitle(\'${ttsInfos.Cost_Centers_Breakdown_Summary
+                    .listtitle}\')/items?$filter=Title eq '${data.RequisitionNumber}'`;
+                SpRequestService.request_get(url)
+                    .then(response => {
+                        let items: any[] = response.body.d.results;
+                        if (items.length > 0) {
+                            let id: number = items[0].Id;
+                            url = `${ttsInfos.url}/_api/web/lists/GetByTitle(\'${ttsInfos.Cost_Centers_Breakdown_Summary
+                                .listtitle}\')/items(${id})`;
+                            SpRequestService.request_delete({}, ttsInfos.Cost_Centers_Breakdown_Summary.listtitle,
+                                url).then((delret) => {
+                                    console.log(delret);
+                                }).catch(delerr => {
+                                    console.log(delerr);
+                                });
+                        }
+                        ttsService.create({
+                            "Title": data["RequisitionNumber"],
+                            "Quantity": data["Quantity"],
+                            "UnitCost": data.UnitCost,
+                            "CostCenterCodeLookupId": data["CostCenterCode"],
+                            "People": data["People"] === null ? "" : data["People"],
+                            "Guest": data["Guest"] == null ? "" : data["Guest"]
+                        }, accessToken, ttsInfos.Cost_Centers_Breakdown_Summary.name)
+                            .then(createdret => {
+                                console.log(createdret);
+                            });
+
+
+
+                    })
+                    .catch(err2 => {
+                        console.log(url);
+                    });
+            }
+        }
     }
     userinfo(req: Request, res: Response): void {
         TtsServices.getUserData(this.getAccessToken(req)).then((r) => {
@@ -331,20 +606,7 @@ export class TtsController {
             res.end();
         });
     }
-    update_ticket_requests(req: Request, res: Response): void {
-        TtsServices.update(req.params.id, req.body, this.getAccessToken(req), ttsInfos.Ticket_Requests.name)
-            .then((r) => {
-                if (r) {
-                    res.json(r);
-                } else {
-                    res.end();
-                }
-            }).catch((err) => {
-                res.statusMessage = err.message ? err.message : undefined;
-                res.statusCode = err.status ? err.status : undefined;
-                res.end();
-            });
-    }
+  
     delete_ticket_requests(req: Request, res: Response): void {
         TtsServices.delete(req.params.id, this.getAccessToken(req), ttsInfos.Ticket_Requests.name)
             .then((r) => {

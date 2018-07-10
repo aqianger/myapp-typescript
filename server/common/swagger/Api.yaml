@@ -34,79 +34,202 @@ securityDefinitions:
     in: header
 
 paths:
-  /examples:
+  /entities:
     get:
       security:
         - Bearer: []
       tags:
-        - Examples
-      description: Fetch all examples
+        - Entity
+      description: Get all entites
       responses:
         200:
-          description: Returns all examples
-    post:
+          description: A list of entities
+
+  /par_cost_centers/{entity}:
+    get:
+      tags:
+        - Cost Center
       security:
         - Bearer: []
-      tags:
-        - Examples
-      description: Fetch all examples
+      description: Get all cost centers of an entity,from 'https://esquel.sharepoint.com/sites/ead/'
       parameters:
-        - name: example
-          in: body
-          description: an example
+        - name: entity
+          in: path
+          required: true
+          description: the entity of the cost centers to retrieve
+          type: integer
+      responses:
+        200:
+          description: Returns a list of cost centers of the given entity
+  /cost_centers/{entity}:
+    get:
+      tags:
+        - Cost Center
+      security:
+        - Bearer: []
+      description: Get all cost centers of an entity,from https://esquel.sharepoint.com/sites/ead/tts_sit/
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          description: the entity of the cost centers to retrieve
+          type: integer
+      responses:
+        200:
+          description: Returns a list of cost centers of the given entity
+         
+  /locations:
+    get:   
+      tags:
+        - Locations
+      security:
+        - Bearer: []
+      description:  Get all frequently used locations in travel ticketing system, such as seaports, bus stations and train stations.
+      responses:
+        200:  
+          description: Returns a list of frequently used locations.
+          
+  /me:
+    get:      
+      tags:
+        - my information
+      security:
+        - Bearer: []
+      description:  Get myinfomation.
+      responses:
+        200:  
+          description: Returns my infomation.
+          content:
+            application/json:
+              schema:
+                type: object
+                example: '{Id:123,Title:"Guo, Qiang (Symbio) /GET/IT",UserName:""GuoQian@esquel.com",...}'
+
+  /schedule/{modeid}/{destinationid}/{originid}:
+    get:
+      security:
+         - Bearer: []
+      tags:
+        - Schedule 
+      description: 'Get ferry schedule between two location.'
+      parameters:
+        - name: modeid
+          description: the modeid of transport
+          in: query
           required: true
           schema:
-            $ref: '#/definitions/ExampleBody'
+            type: int
+            enum:
+              - bus   /id
+              - ferry /id
+              - china railway /id
+              - mtr intercity through train /id
+            example: ferry
+        - name: destinationid
+          in: query
+          required: true
+          description: the id of the destination. The name should be in 
+          schema:
+            type: int
+        - name: originid
+          in: query
+          required: true
+          description: the id of the origin, such as `shunde port --id`
+          schema:
+            type: int
       responses:
-        200:
-          description: Returns newly created examples
+        '200':
+          description: Returns schedule of given transportation between two locations.
+          content:
+            application/json:
+              schema:
+                type: array
 
-  /examples/{id}:
-    get:
+  '/travel_ticket_requests':
+    security:
+        - Bearer: []
+    post:
       tags:
-        - Examples
+        - Travel Ticketing System Request
+      description: Create a new ferry ticket request
+      requestBody:
+       
+        required: true
+      responses:
+        '200':
+          description: Returns request
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: string
+                        example: TTS20180604001
+
+        
+  '/travel_ticket_requests/{id}':
+    get:
       security:
         - Bearer: []
+      tags:
+        - Travel Ticketing System Request
+      description: Get request with given ID
       parameters:
         - name: id
           in: path
           required: true
-          description: The id of the entity to retrieve
-          type: integer
+          description: The id of the request to retrieve
+          schema:
+            type: string
       responses:
-        200:
-          description: Return the example with the specified id
+        '200':
+          description: Return the request with the specified id
+        '404':
+          description: Example not found
+    put:
+      tags:
+        - Travel Ticketing System Request
+      description: Update request with given ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the request to update
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+        description: request body
+        required: true
+      responses:
+        '200':
+          description: Returns request                
     delete:
       tags:
-        - Examples
-      security:
-        - Bearer: []
+        - Travel Ticketing System Request
+      description: Delete request with given ID
       parameters:
         - name: id
           in: path
           required: true
-          description: The id of the entity to delete
-          type: integer
-      responses:
-        204:
-          description: Example with the specified id is deleted
-    patch:
-      tags:
-        - Examples
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: The id of the entity to retrieve
-          type: integer
-        - name: example
-          in: body
-          description: an example
-          required: true
+          description: The id of the request to be deleted
           schema:
-            $ref: '#/definitions/ExampleBody'
+            type: string
       responses:
-        200:
-          description: Return the updated example with the specified id
+        '204':
+          description: Request deleted
+
+  '/spec':
+    get:
+      tags:
+        - Specification
+      responses:
+        '200':
+          description: Return the API specification           
+  

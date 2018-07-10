@@ -377,7 +377,7 @@ components:
       required:
         - id
         - name
-        - costCenter
+        - costCenterid
         - documentType
         - documentID
         - isDocumentIDMasked
