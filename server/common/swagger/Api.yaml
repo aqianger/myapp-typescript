@@ -144,6 +144,30 @@ paths:
             application/json:
               schema:
                 type: array
+  /my_ticket_requests:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Schedule 
+      description: 'Get my_ticket_requests.'
+      parameters:
+        - name: top
+          description: return top number default 10
+          in: query
+          required: false
+        - name: __next
+          description: the next page url
+          in: query
+          required: false
+      responses:
+        200:  
+          description: Returns my infomation.
+          content:
+            application/json:
+              schema:
+                type: object
+                
 
   '/travel_ticket_requests':
     security:
